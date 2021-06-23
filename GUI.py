@@ -3,7 +3,7 @@ import sys, os, random
 from query import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
-from PyQt5.QtWidgets import QDialog,QVBoxLayout,QMainWindow, QApplication, QWidget, QPushButton, QAction, QLineEdit, QMessageBox
+from PyQt5.QtWidgets import QDialog,QVBoxLayout,QMainWindow, QFileDialog,QApplication, QWidget, QPushButton, QAction, QLineEdit, QMessageBox
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -18,6 +18,8 @@ rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 rc('text', usetex=True)
 # main window
 # which inherits QDialog
+
+
 class Window(QDialog):
        
     # constructor
@@ -31,19 +33,27 @@ class Window(QDialog):
         # displays the 'figure'it takes the
         # 'figure' instance as a parameter to __init__
         self.canvas = FigureCanvas(self.figure)
-   
+        self.canvas.resize
         # this is the Navigation widget
         # it takes the Canvas widget and a parent
         self.toolbar = NavigationToolbar(self.canvas, self)
    
         # Just some button connected to 'plot' method
-        self.button = QPushButton('Search and Plot SED of the source')
+        self.buttonplot = QPushButton('Search and Plot SED of the source')
+
+        self.buttonexport = QPushButton('Export as EPS file')
+
+        self.buttonexit = QPushButton('Exit')
 
         self.textbox= QLineEdit(self)
         self.textbox.resize(280,40)
         # adding action to the button
-        self.button.clicked.connect(self.plot)
+        self.buttonplot.clicked.connect(self.plot)
    
+        self.buttonexport.clicked.connect(self.file_save)
+
+        self.buttonexit.clicked.connect(QCoreApplication.instance().quit)
+
         # creating a Vertical Box layout
         layout = QVBoxLayout()
            
@@ -56,8 +66,11 @@ class Window(QDialog):
         layout.addWidget(self.textbox)
 
         # adding push button to the layout
-        layout.addWidget(self.button)
-           
+        layout.addWidget(self.buttonplot)
+
+        layout.addWidget(self.buttonexport)       
+
+        layout.addWidget(self.buttonexit)  
         # setting layout to the main window
         self.setLayout(layout)
    
@@ -87,24 +100,34 @@ class Window(QDialog):
         self.figure.clear()
    
         # create an axis
-        ax = self.figure.add_subplot(111)
+        self.ax = self.figure.add_subplot(111)
 
-        ax.loglog(src_freq,src_flux,'.')
-        plt.xlabel(freq_unit)
-        plt.ylabel(flux_unit)
+        self.ax.loglog(src_freq,src_flux,'.')
+        plt.xlabel(freq_unit,fontsize=12)
+        plt.ylabel(flux_unit,fontsize=12)
         plt.suptitle(r"SED of %s"%(text_src_name),fontsize=12)
-        plt.title(r"($\alpha$=%s,$\delta$=%s)"%(txtRA,txtDEC))
-
+        plt.title(r"($\alpha$=%s,$\delta$=%s)"%(txtRA,txtDEC),fontsize=12)
+        plt.tight_layout(pad=0.3)
         # refresh canvas
         self.canvas.draw()
         del q
+
+    def file_save(self):
+        pathname = QFileDialog.getSaveFileName(self, 'Save File')
+        print(pathname)
+        if pathname != "":
+            plt.savefig(pathname[0],format="eps")
+        #file = open(name,'w')
+        #text = self.textEdit.toPlainText()
+        #file.write(text)
+        #file.close()
    
 # driver code
 if __name__ == '__main__':
        
     # creating apyqt5 application
     app = QApplication(sys.argv)
-   
+
     # creating a window object
     main = Window()
        
