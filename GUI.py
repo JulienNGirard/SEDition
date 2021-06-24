@@ -10,6 +10,10 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
+
+import numpy as np
+
+
 import astropy.units as u
 from astropy.coordinates import Angle
 
@@ -41,6 +45,8 @@ class Window(QDialog):
         # Just some button connected to 'plot' method
         self.buttonplot = QPushButton('Search and Plot SED of the source')
 
+        self.buttonfit = QPushButton('Fit linear trend')
+
         self.buttonexport = QPushButton('Export as EPS file')
 
         self.buttonexit = QPushButton('Exit')
@@ -49,7 +55,8 @@ class Window(QDialog):
         self.textbox.resize(280,40)
         # adding action to the button
         self.buttonplot.clicked.connect(self.plot)
-   
+        self.buttonfit.clicked.connect(self.fit_linear_trend)
+
         self.buttonexport.clicked.connect(self.file_save)
 
         self.buttonexit.clicked.connect(QCoreApplication.instance().quit)
@@ -68,6 +75,8 @@ class Window(QDialog):
         # adding push button to the layout
         layout.addWidget(self.buttonplot)
 
+        layout.addWidget(self.buttonfit)       
+
         layout.addWidget(self.buttonexport)       
 
         layout.addWidget(self.buttonexit)  
@@ -84,8 +93,8 @@ class Window(QDialog):
         q=query_sed(text_src_name,radius=0.005)
 
         src_name=q
-        src_flux=q['sed_flux'] # in Jansky
-        src_freq=q['sed_freq'] # in GHz
+        self.src_flux=q['sed_flux'] # in Jansky
+        self.src_freq=q['sed_freq'] # in GHz
 
         src_RA=q['_RAJ2000'][0]
         src_DEC=q['_DEJ2000'][0]
@@ -93,8 +102,8 @@ class Window(QDialog):
         txtRA=Angle(src_RA,u.degree).to_string(unit=u.hour)
         txtDEC=Angle(src_DEC,u.degree).to_string(unit=u.degree)
 
-        flux_unit=src_flux.unit
-        freq_unit=src_freq.unit
+        flux_unit=self.src_flux.unit
+        freq_unit=self.src_freq.unit
 
         # clearing old figure
         self.figure.clear()
@@ -102,7 +111,7 @@ class Window(QDialog):
         # create an axis
         self.ax = self.figure.add_subplot(111)
 
-        self.ax.loglog(src_freq,src_flux,'.')
+        self.ax.loglog(self.src_freq,self.src_flux,'.')
         plt.xlabel(freq_unit,fontsize=12)
         plt.ylabel(flux_unit,fontsize=12)
         plt.suptitle(r"SED of %s"%(text_src_name),fontsize=12)
@@ -111,6 +120,18 @@ class Window(QDialog):
         # refresh canvas
         self.canvas.draw()
         del q
+
+    def fit_linear_trend(self):
+        logfreq=np.log10(self.src_freq)
+        logflux=np.log10(self.src_flux)       
+        coeffs = np.polyfit(logfreq,logflux,deg=1)
+        poly = np.poly1d(coeffs)
+        model=lambda x: 10**(poly(x))
+        modeldata=model(logfreq)
+        #print(modeldata)
+        plt.loglog(self.src_freq,modeldata,'r:')
+        plt.annotate(r"Model: $\log F$=%.3f*$\log\nu$+%.3f"%(coeffs[0],coeffs[1]),xy=(0.025,0.85),xycoords='axes fraction',fontsize=6,color="red")
+        self.canvas.draw()
 
     def file_save(self):
         pathname = QFileDialog.getSaveFileName(self, 'Save File')
