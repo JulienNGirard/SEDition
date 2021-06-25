@@ -1,2 +1,5 @@
 matplotlib
-astroquery
+astropy
+http
+pyqt
+
