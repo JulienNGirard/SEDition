@@ -11,6 +11,7 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as Navigatio
 from matplotlib.figure import Figure
 
 
+
 import numpy as np
 
 
@@ -90,8 +91,11 @@ class Window(QDialog):
         if text_src_name =='':
             raise ValueError('No source specified')
 
-        q=query_sed(text_src_name,radius=0.005)
-
+        try:
+            q=query_sed(text_src_name,radius=0.005)
+        except ValueError:
+            print('No table found, please check the source ID')
+            
         src_name=q
         self.src_flux=q['sed_flux'] # in Jansky
         self.src_freq=q['sed_freq'] # in GHz

@@ -4,7 +4,6 @@ from http.client import HTTPConnection
 from astropy.table import Table
 import matplotlib.pyplot as plt
 
-
 def query_sed(pos, radius=2):
     """ Query VizieR Photometry 
       
@@ -39,6 +38,3 @@ def query_sed(pos, radius=2):
    
     table = Table.read(BytesIO(response.read()), format="votable")
     return table
-
-
-
