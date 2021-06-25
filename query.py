@@ -4,7 +4,6 @@ from http.client import HTTPConnection
 from astropy.table import Table
 import matplotlib.pyplot as plt
 
-
 def query_sed(pos, radius=2):
     """ Query VizieR Photometry 
       
@@ -26,16 +25,16 @@ def query_sed(pos, radius=2):
     except:
         target = pos
     
-    url = "http:///viz-bin/sed?-c={target:s}&-c.rs={radius:f}"
+    if isinstance(target,str):
+        target=target.replace(" ", "%20")
+
     host = "vizier.u-strasbg.fr"
     port = 80
     path = "/viz-bin/sed?-c={target:s}&-c.rs={radius:f}".format(target=target, radius=radius)
+    print("Query: GET ",path)
     connection = HTTPConnection(host, port)
     connection.request("GET", path)
     response = connection.getresponse()
    
     table = Table.read(BytesIO(response.read()), format="votable")
     return table
-
-
-
